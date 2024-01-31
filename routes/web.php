@@ -26,3 +26,7 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 });
+
+Route::get('/order', function () {
+    return view('order');
+})->name('order');

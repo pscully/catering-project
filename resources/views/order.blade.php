@@ -1,0 +1,1 @@
+@livewire('place-catering-order')
