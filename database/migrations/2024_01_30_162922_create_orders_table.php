@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,15 +14,13 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('user_id'); // foreign key
             $table->unsignedBigInteger('catering_status_id')->default(1); // foreign key
-            $table->dateTime('delivery_date')->nullable();
+            $table->date('order_date')->nullable();
+            $table->string('order_time');
             $table->string('closest_location')->nullable();
-            $table->string('pickup_location')->nullable();
-            $table->dateTime('pickup_date')->nullable();
             $table->string('pickup_first_name')->nullable();
-            $table->text('catering')->nullable();//
             $table->text('notes')->nullable();
             $table->integer('number_people')->nullable();
-            $table->string('delivery')->nullable();
+            $table->boolean('delivery')->nullable();
             $table->boolean('setup')->default(false);
             $table->string('coffee_type')->nullable();
             $table->string('charge_id')->nullable();
