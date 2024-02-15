@@ -23,10 +23,12 @@ Route::middleware([
     'verified',
 ])->group(function () {
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        $orders = auth()->user()->cateringOrders()->get();
+        return view('dashboard', ['orders' => $orders]);
     })->name('dashboard');
 });
 
 Route::get('/order', function () {
-    return view('order');
+    $user = auth()->user();
+    return view('order', ['user' => $user]);
 })->name('order');

@@ -3,7 +3,7 @@
 @endphp
 
 <div class="flex">
-    <div class="max-w-3xl w-full p-10 border border-black dark:border-white m-10 dark:text-black">
+    <div class="w-full p-10 border-2 border-black dark:border-white m-10 dark:text-black">
         <form wire:submit="placeCateringOrderSubmit">
             {{ $this->form }}
 
@@ -11,13 +11,11 @@
                 Submit
             </button>
         </form>
-
         <x-filament-actions::modals/>
     </div>
-    <div class="max-w-3xl w-full p-10 border border-black dark:border-white m-10">
+    <div class="max-w-3xl w-full p-10 border-2 border-black dark:border-white m-10">
         <div class="mt-8">
-            <h2 class="text-2xl">Total for all products:</h2>
-            ${{ number_format($grandTotal, 2) }}
+            @if ($orderProducts)
             @foreach($orderProducts as $sku => $quantity)
                 @php
                     $product = \App\Models\CateringProduct::where('sku', $sku)->first();
@@ -38,6 +36,9 @@
                     </div>
                 @endif
             @endforeach
+            @endif
         </div>
+        <h2 class="text-2xl">Total for all products:</h2>
+        ${{ number_format($grandTotal, 2) }}
     </div>
 </div>

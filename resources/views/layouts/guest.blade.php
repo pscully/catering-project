@@ -16,6 +16,7 @@
 
     <!-- Styles -->
     @livewireStyles
+    @filamentStyles
 </head>
 <body>
 <div class="font-sans text-gray-900 dark:text-gray-100 antialiased bg-white dark:bg-gray-900">
@@ -23,5 +24,6 @@
 </div>
 
 @livewireScripts
+@filamentScripts
 </body>
 </html>

@@ -6,6 +6,19 @@
     display: none;
 }
 
-input {
-    text: black;
+.fi-section-header-heading {
+    color: black;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.fi-fo-field-wrp-label span {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.fi-fo-field-wrp-error-message {
+    color: red;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
 }

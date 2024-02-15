@@ -4,20 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CateringOrder extends Model
 {
     use HasFactory;
 
+    use SoftDeletes;
+
     protected $fillable = [
         'user_id',
         'catering_status_id',
-        'delivery_date',
+        'order_date',
+        'order_time',
         'closest_location',
-        'pickup_location',
-        'pickup_date',
         'pickup_first_name',
-        'catering',
         'notes',
         'number_people',
         'delivery',
@@ -33,11 +34,41 @@ class CateringOrder extends Model
     ];
 
     protected $casts = [
-        'pickup_date' => 'datetime',
+        'order_date' => 'datetime',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function cateringStatus()
+    {
+        return $this->belongsTo(CateringStatus::class);
+    }
+
+    public function getOrderStatusAttribute()
+    {
+        return $this->cateringStatus->name;
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'closest_location');
+    }
+
+    public function getOrderLocationAttribute()
+    {
+        return $this->location->name;
+    }
+
+    public function cateringOrderProducts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(CateringOrderProduct::class);
+    }
+
+    public function deliveryAddress(): \Illuminate\Database\Eloquent\Relations\MorphOne
+    {
+        return $this->morphOne(DeliveryAddress::class, 'addressable');
     }
 }

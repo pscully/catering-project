@@ -15,11 +15,16 @@ class CateringStatus extends Model
         'name'
     ];
 
-    const NEW_ID        = 1;
-    const IN_PROGRESS_ID   = 2;
-    const DECLINED_ID  = 3;
-    const COMPLETED_ID  = 4;
-    const DELIVERED_ID  = 5;
-    const REFUNDED_ID   = 6;
-    const FULFILLED_ID  = 7;
+    const NEW_ID = 1;
+    const IN_PROGRESS_ID = 2;
+    const DECLINED_ID = 3;
+    const COMPLETED_ID = 4;
+    const DELIVERED_ID = 5;
+    const REFUNDED_ID = 6;
+    const FULFILLED_ID = 7;
+
+    public function name(): string
+    {
+        return $this->name;
+    }
 }

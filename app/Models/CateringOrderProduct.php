@@ -6,6 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class CateringOrderProduct extends Model
 {
+
+    protected $fillable = [
+        'order_id',
+        'product_id',
+        'quantity',
+    ];
+
     public function details()
     {
         return $this->hasOne('App\Product', 'id', 'product_id');

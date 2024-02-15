@@ -25,6 +25,30 @@ enum cateringOrderTimes: string implements HasLabel
     case ThreeThirty = '3:30 PM';
     case Four = '4:00 PM';
 
+    public static function values(): array
+    {
+        return [
+            self::SevenThirty,
+            self::Eight,
+            self::EightThirty,
+            self::Nine,
+            self::NineThirty,
+            self::Ten,
+            self::TenThirty,
+            self::Eleven,
+            self::ElevenThirty,
+            self::Twelve,
+            self::TwelveThirty,
+            self::One,
+            self::OneThirty,
+            self::Two,
+            self::TwoThirty,
+            self::Three,
+            self::ThreeThirty,
+            self::Four,
+        ];
+    }
+
     public function getLabel(): ?string
     {
         return $this->value;

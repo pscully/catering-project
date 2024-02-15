@@ -75,7 +75,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         //  && $this->hasVerifiedEmail()
     }
 
-    public function orders()
+    public function cateringOrders(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(CateringOrder::class);
     }
