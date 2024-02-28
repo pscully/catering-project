@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Mail\CateringOrderPlacedInt;
+use App\Models\CateringOrder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,12 +13,14 @@ class CateringOrderPlaced extends Notification
 {
     use Queueable;
 
+    public CateringOrder $order;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct()
+    public function __construct(CateringOrder $order)
     {
-        //
+        $this->order = $order;
     }
 
     /**
@@ -32,14 +36,10 @@ class CateringOrderPlaced extends Notification
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $notifiable)
     {
-        return (new MailMessage)
-                    ->line('The introduction to the notification.')
-                    ->action('Notification Action', url('/'))
-                    ->line('Thank you for using our application!');
+        return (new CateringOrderPlacedInt($this->order))->to($notifiable->email);
     }
-
     /**
      * Get the array representation of the notification.
      *

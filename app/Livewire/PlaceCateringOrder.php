@@ -2,274 +2,110 @@
 
 namespace App\Livewire;
 
-use App\Mail\CateringOrderPlacedInt;
-use App\Models\User;
+use App\Forms\CateringCustomerDetailsSection;
+use App\Forms\CateringMenuSection;
+use App\Forms\CateringOrderDetailsSection;
 use App\Models\CateringOrder;
 use App\Models\CateringProduct;
-use App\Models\CateringOrderProduct;
-use App\Models\Location;
-use App\Rules\CateringOrderValidDateTime;
-use Carbon\Carbon;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\ToggleButtons;
+use App\Models\User;
+use App\Services\Catering\AttachCateringOrderProductsService;
+use App\Services\Catering\CalculateCateringOrderDeliveryFeeService;
+use App\Services\Catering\CalculateCateringOrderTotalService;
+use App\Services\Catering\CalculateDeliveryDistanceMilesService;
+use App\Services\Catering\CreateCateringOrderService;
+use App\Services\User\FindOrCreateUserService;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Components\Section;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
-use App\Enums\CateringOrderTimes;
-use Closure;
-use Illuminate\Support\Facades\Mail;
 
 class PlaceCateringOrder extends Component implements HasForms
 {
     use InteractsWithForms;
 
-    public $user;
+    public User $user;
     public $products = [];
     public ?array $orderProducts = [];
     public ?array $orderDetails = [];
     public ?array $customerDetails = [];
 
-    public function mount()
+    public function mount(): void
     {
         $this->products = CateringProduct::all();
 
-        $this->user = auth()->user();
-
-        if (!$this->user) {
-            $this->form->fill();
+        if (Auth::check()) {
+            $this->user = Auth::user();
+            $this->form->fill([
+                'customerDetails.first_name' => $this->user->first_name,
+                'customerDetails.last_name' => $this->user->last_name,
+                'customerDetails.email' => $this->user->email,
+                'customerDetails.phone_number' => $this->user->phone_number,
+            ]);
         } else {
-            $this->form->fill($this->user->toArray());
+            $this->form->fill();
         }
 
-
     }
 
-    private function customerDetailsSection(): Section
+    private function buildFormSchema(): array
     {
-        $customerDetailsFields = [];
+        $customerDetailsFields = new CateringCustomerDetailsSection();
+        $orderDetailsFields = new CateringOrderDetailsSection();
+        $productFields = new CateringMenuSection();
 
-        $customerDetailsFields[] = TextInput::make('first_name')
-            ->label('First Name')
-            ->required();
+        return [
+            Section::make('Customer Details')
+                ->schema($customerDetailsFields->build())
+                ->statePath('customerDetails')
+                ->collapsible(),
 
-        $customerDetailsFields[] = TextInput::make('last_name')
-            ->label('Last Name')
-            ->required();
+            Section::make('Order Details')
+                ->collapsible()
+                ->statePath('orderDetails')
+                ->schema($orderDetailsFields->build()),
 
-        $customerDetailsFields[] = TextInput::make('email')
-            ->label('Email')
-            ->required();
-
-        $customerDetailsFields[] = TextInput::make('phone_number')
-            ->label('Phone')
-            ->required();
-
-        return Section::make('Customer Details')
-            ->schema($customerDetailsFields)
-            ->statePath('customerDetails')
-            ->collapsible();
+            Section::make('Catering Menu')
+                ->collapsible()
+                ->statePath('orderProducts')
+                ->schema($productFields->build($this->products)),
+        ];
     }
 
-    private function orderDetailsSection(): Section
+    public function submitAndCreateOrder(FindOrCreateUserService $findOrCreateUserService, CreateCateringOrderService $createCateringOrderService, AttachCateringOrderProductsService $attacher, CalculateCateringOrderTotalService $calculator, CalculateCateringOrderDeliveryFeeService $deliveryFeeCalculator, CalculateDeliveryDistanceMilesService $milesCalculator ): null
     {
-        $orderDetailsFields = [];
+        $data = $this->form->getState();
 
-        $orderDetailsFields[] = ToggleButtons::make('delivery')
-            ->label('Delivery Required?')
-            ->live()
-            ->required()
-            ->boolean()
-            ->colors([
-                false => 'warning',
-                true => 'success',
-            ])
-            ->grouped();
+        $isDelivery = $data['orderDetails']['delivery']?? false;
 
-        $orderDetailsFields[] = ToggleButtons::make('setup')
-            ->label('Setup Required?')
-            ->boolean()
-            ->colors([
-                '0' => 'warning',
-                '1' => 'success',
-            ])
-            ->grouped()
-            ->hidden(fn(Get $get): bool => !$get('delivery'));
+        try {
+            $user = $this->findOrCreateUser($findOrCreateUserService, $data['customerDetails']);
+            $order = $this->createCateringOrder($createCateringOrderService, $user, $data['orderDetails']);
+            $order->attachProductsAndFinalize($data['orderProducts'], $isDelivery, $attacher, $calculator, $deliveryFeeCalculator, $milesCalculator);
 
-        $orderDetailsFields[] = TextInput::make('delivery_address')
-            ->label('Delivery Address')
-            ->hidden(fn(Get $get): bool => !$get('delivery'));
-
-        $orderDetailsFields[] = Select::make('closest_location')
-            ->label('Closest Location')
-            ->options(Location::pluck('name', 'id')->toArray())
-            ->required();
-
-        $orderDetailsFields[] = DatePicker::make('order_date')
-            ->label('Order Date')
-            ->format('m/d/Y')
-            ->helperText('Pickup or Delivery Date')
-            ->after('today')
-            ->required();
-
-        $orderDetailsFields[] = Select::make('order_time')
-            ->label('Time')
-            ->options(CateringOrderTimes::class)
-            ->required()
-            ->rules([fn(Get $get): Closure => function (string $attribute, mixed $value, Closure $fail) use ($get): void {
-                $tomorrow = Carbon::tomorrow()->startOfDay(); // Get tomorrow's date at 00:00 hours
-                $selectedDate = Carbon::parse($get('order_date'))->startOfDay(); // Parse the selected date and reset time to 00:00 hours
-
-                if ($selectedDate->equalTo($tomorrow) && strtotime($value) < strtotime('12:00 PM')) {
-                    $fail('When placing a next day order, pickup time must be at 12:00 PM or later.');
-                }
-
-            }]);
-
-        $orderDetailsFields[] = TextInput::make('number_people')
-            ->label('Number of People')
-            ->numeric()
-            ->step(1);
-
-        $orderDetailsFields[] = TextInput::make('pickup_first_name')
-            ->label('Optional Pickup First Name')
-            ->helperText('Who will pickup the order?');
-
-        $orderDetailsFields[] = TextArea::make('notes')
-            ->label('Notes')
-            ->helperText('Any special instructions?');
-
-        return Section::make('Order Details')
-            ->collapsible()
-            ->statePath('orderDetails')
-            ->schema($orderDetailsFields);
-
-    }
-
-    private function menuSection(): Section
-    {
-        $products = [];
-
-        foreach ($this->products as $product) {
-            $products[] = TextInput::make($product->sku)
-                ->label($product->name)
-                ->placeholder('0')
-                ->numeric()
-                ->step(1)
-                ->live()
-                ->default(0);
+            Auth::login($user);
+            return $this->redirect('/dashboard');
+        } catch (\Throwable $th) {
+            // Handle the exception in a user-friendly way
+            session()->flash('error', 'An error occurred while processing your order. Please try again.');
+            return null;
         }
+    }
 
-        return Section::make('Menu')
-            ->collapsible()
-            ->statePath('orderProducts')
-            ->schema($products);
+    private function findOrCreateUser($service, $customerDetails): User
+    {
+        return $service->run($customerDetails);
+    }
+
+    private function createCateringOrder($service, $user, $orderDetails): CateringOrder
+    {
+        return $service->run($user, $orderDetails);
     }
 
     public function form(Form $form): Form
     {
-        if ($this->user) {
-            return $form->schema([
-                $this->orderDetailsSection(),
-                $this->menuSection(),
-            ])->model(CateringOrder::class);
-        } else {
-            return $form->schema([
-                $this->customerDetailsSection(),
-                $this->orderDetailsSection(),
-                $this->menuSection(),
-            ])->model(CateringOrder::class);
-        }
-
-
-    }
-
-    public function placeCateringOrderSubmit(): null
-    {
-        $formData = $this->form->getState();
-
-        $user = $this->createOrUpdateUser($formData['customerDetails'] ?? []);
-        $order = $this->createOrder($user, $formData['orderDetails']);
-        $this->createOrderProducts($order, $formData['orderProducts']);
-
-        $order->total = $this->calculateGrandTotal($formData['orderProducts']);
-
-        $order->save();
-
-        Mail::to($user->email)->send(new CateringOrderPlacedInt($order));
-
-        return $this->redirect('/dashboard');
-    }
-
-    private function createOrUpdateUser(array $customerDetails): User
-    {
-        if (auth()->user()) {
-            return auth()->user();
-        } else {
-            return User::firstOrCreate([
-                'email' => $customerDetails['email'],
-            ], [
-                'first_name' => $customerDetails['first_name'],
-                'last_name' => $customerDetails['last_name'],
-                'phone_number' => $customerDetails['phone_number'],
-                'password' => bcrypt(Str::random(10)),
-            ]);
-        }
-
-    }
-
-    private function createOrder(User $user, array $orderDetails): \Illuminate\Database\Eloquent\Model|bool
-    {
-        $order = new CateringOrder([
-            'delivery' => $orderDetails['delivery'],
-            'setup' => $orderDetails['setup'] ?? false,
-            'order_date' => $orderDetails['order_date'],
-            'closest_location' => $orderDetails['closest_location'],
-            'pickup_first_name' => $orderDetails['pickup_first_name'],
-            'notes' => $orderDetails['notes'],
-            'number_people' => $orderDetails['number_people'],
-            'order_time' => $orderDetails['order_time']]);
-
-        return $user->cateringOrders()->save($order);
-    }
-
-    private function createOrderProducts(CateringOrder $order, array $orderProducts): void
-    {
-        foreach ($orderProducts as $sku => $quantity) {
-            if ($quantity > 0) {
-                $product = CateringProduct::where('sku', $sku)->first();
-                $orderProduct = new CateringOrderProduct([
-                    'quantity' => $quantity,
-                    'order_id' => $order->id,
-                    'product_id' => $product->id,
-                ]);
-
-                $orderProduct->save();
-            }
-        }
-    }
-
-    private function calculateGrandTotal(array $orderProducts): float|int
-    {
-        $grandTotal = 0;
-
-        foreach ($orderProducts as $sku => $quantity) {
-            if ($quantity > 0) {
-                $product = CateringProduct::where('sku', $sku)->first();
-                $productPrice = optional($product)->price;
-                $quantity = (int)$quantity;
-                $productTotalPrice = $productPrice * $quantity;
-                $grandTotal += $productTotalPrice;
-            }
-        }
-
-        return $grandTotal;
+        return $form->schema($this->buildFormSchema())->model(CateringOrder::class);
     }
 
     public function render()

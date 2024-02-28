@@ -12,6 +12,8 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasName;
+use Laravel\Cashier\Billable;
+use function Illuminate\Events\queueable;
 
 class User extends Authenticatable implements FilamentUser, HasName
 {
@@ -20,6 +22,7 @@ class User extends Authenticatable implements FilamentUser, HasName
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
+    use Billable;
 
     /**
      * The attributes that are mass assignable.
@@ -64,6 +67,20 @@ class User extends Authenticatable implements FilamentUser, HasName
         'profile_photo_url',
     ];
 
+    protected static function booted(): void
+    {
+        static::updated(queueable(function (User $customer) {
+            if ($customer->hasStripeId()) {
+                $customer->syncStripeCustomerDetails();
+            }
+        }));
+    }
+
+    public function stripeName(): string
+    {
+        return $this->first_name.''. $this->last_name;
+    }
+
     public function getFilamentName(): string
     {
         return "{$this->first_name} {$this->last_name}";
@@ -79,4 +96,5 @@ class User extends Authenticatable implements FilamentUser, HasName
     {
         return $this->hasMany(CateringOrder::class);
     }
+
 }

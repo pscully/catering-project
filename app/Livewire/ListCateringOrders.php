@@ -45,7 +45,7 @@ class ListCateringOrders extends Component implements HasForms, HasTable
                     ->sortable(),
                 Tables\Columns\TextColumn::make('order_time')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('location.name')
+                Tables\Columns\TextColumn::make('closest_location.name')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('delivery')
                     ->boolean(),

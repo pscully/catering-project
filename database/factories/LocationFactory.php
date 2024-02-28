@@ -18,6 +18,13 @@ class LocationFactory extends Factory
     {
         return [
             'name' => $this->faker->name(),
+            'street_address' => $this->faker->address(),
+            'city' => 'Charlotte',
+            'state' => 'NC',
+            'zip_code' => '28277',
+            'map_link' => $this->faker->url(),
+            'latitude' => $this->faker->latitude(),
+            'longitude' => $this->faker->longitude(),
         ];
     }
 }

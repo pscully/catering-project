@@ -13,13 +13,12 @@ return new class extends Migration {
         Schema::create('delivery_locations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id');
-            $table->string('address');
+            $table->string('street');
             $table->string('city');
             $table->string('state');
-            $table->string('zip_code');
-            $table->string('street');
-            $table->string('latitude');
-            $table->string('longitude');
+            $table->string('zip');
+            $table->string('latitude')->nullable();
+            $table->string('longitude')->nullable();
             $table->string('apartment_suite')->nullable();
             $table->boolean('is_business')->default(false);
             $table->string('business_name')->nullable();

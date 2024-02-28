@@ -28,5 +28,7 @@ class DatabaseSeeder extends Seeder
                 'name' => $location,
             ]);
         }
+
+        \App\Models\CateringProduct::factory()->count(10)->create();
     }
 }

@@ -2,18 +2,18 @@
     $grandTotal = 0;
 @endphp
 
-<div class="flex">
-    <div class="w-full p-10 border-2 border-black dark:border-white m-10 dark:text-black">
-        <form wire:submit="placeCateringOrderSubmit">
+<div class="flex-col sm:flex">
+    <div class="p-10 border-2 border-black dark:border-white m-10 dark:text-black">
+        <form wire:submit="submitAndCreateOrder">
             {{ $this->form }}
 
             <button type="submit" class="rounded bg-black px-6 py-4 text-white mt-4">
-                Submit
+                Submit My Order
             </button>
         </form>
         <x-filament-actions::modals/>
     </div>
-    <div class="max-w-3xl w-full p-10 border-2 border-black dark:border-white m-10">
+    <div class="max-w-3xl p-10 border-2 border-black dark:border-white m-10">
         <div class="mt-8">
             @if ($orderProducts)
             @foreach($orderProducts as $sku => $quantity)

@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->text('notes')->nullable();
             $table->integer('number_people')->nullable();
             $table->boolean('delivery')->nullable();
+            $table->decimal('delivery_fee', 13, 2)->default(0.00);
             $table->boolean('setup')->default(false);
             $table->string('coffee_type')->nullable();
             $table->string('charge_id')->nullable();

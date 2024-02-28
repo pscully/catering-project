@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\CateringOrderResource\Pages;
-use App\Filament\Resources\CateringOrderResource\RelationManagers;
 use App\Models\CateringOrder;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -118,7 +117,6 @@ class CateringOrderResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
         ];
     }
 
