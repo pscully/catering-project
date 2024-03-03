@@ -58,7 +58,7 @@ class DeliveryLocation extends Model
         $response = $client->get('https://maps.googleapis.com/maps/api/geocode/json', [
             'query' => [
                 'address' => $address,
-                'key' => 'AIzaSyD5662MTg3itcKWihNrn-lI3qXY31m_bOY'
+                'key' => ''
             ]
         ]);
 
