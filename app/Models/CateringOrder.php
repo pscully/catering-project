@@ -107,13 +107,14 @@ class CateringOrder extends Model
             $this->calculateDeliveryFee($deliveryFeeCalculator, $milesCalculator );
         }
 
+        $tax = $this->total * 0.0825;
+        $totalToCharge = $this->total + $this->delivery_fee + $tax;
         $this->save();
-        $this->sendOrderConfirmationEmail();
 
     }
 
     public function acceptOrder()
     {
-        dd("Accepting Order");
+        $payment = $this->user->pay($this->total);
     }
 }

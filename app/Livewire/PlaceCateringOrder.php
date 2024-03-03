@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Forms\CateringCustomerDetailsSection;
 use App\Forms\CateringMenuSection;
 use App\Forms\CateringOrderDetailsSection;
+use App\Forms\CateringPaymentDetailsSection;
 use App\Models\CateringOrder;
 use App\Models\CateringProduct;
 use App\Models\User;
@@ -54,6 +55,7 @@ class PlaceCateringOrder extends Component implements HasForms
         $customerDetailsFields = new CateringCustomerDetailsSection();
         $orderDetailsFields = new CateringOrderDetailsSection();
         $productFields = new CateringMenuSection();
+        $paymentDetailsFields = new CateringPaymentDetailsSection();
 
         return [
             Section::make('Customer Details')
@@ -73,11 +75,11 @@ class PlaceCateringOrder extends Component implements HasForms
         ];
     }
 
-    public function submitAndCreateOrder(FindOrCreateUserService $findOrCreateUserService, CreateCateringOrderService $createCateringOrderService, AttachCateringOrderProductsService $attacher, CalculateCateringOrderTotalService $calculator, CalculateCateringOrderDeliveryFeeService $deliveryFeeCalculator, CalculateDeliveryDistanceMilesService $milesCalculator ): null
+    public function submitAndCreateOrder(FindOrCreateUserService $findOrCreateUserService, CreateCateringOrderService $createCateringOrderService, AttachCateringOrderProductsService $attacher, CalculateCateringOrderTotalService $calculator, CalculateCateringOrderDeliveryFeeService $deliveryFeeCalculator, CalculateDeliveryDistanceMilesService $milesCalculator): null
     {
         $data = $this->form->getState();
 
-        $isDelivery = $data['orderDetails']['delivery']?? false;
+        $isDelivery = $data['orderDetails']['delivery'] ?? false;
 
         try {
             $user = $this->findOrCreateUser($findOrCreateUserService, $data['customerDetails']);
@@ -85,7 +87,7 @@ class PlaceCateringOrder extends Component implements HasForms
             $order->attachProductsAndFinalize($data['orderProducts'], $isDelivery, $attacher, $calculator, $deliveryFeeCalculator, $milesCalculator);
 
             Auth::login($user);
-            return $this->redirect('/dashboard');
+            return $this->redirect(route('order.view'));
         } catch (\Throwable $th) {
             // Handle the exception in a user-friendly way
             session()->flash('error', 'An error occurred while processing your order. Please try again.');

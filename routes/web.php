@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\CateringOrderController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -26,9 +28,17 @@ Route::middleware([
         $orders = auth()->user()->cateringOrders()->get();
         return view('dashboard', ['orders' => $orders]);
     })->name('dashboard');
+
+    Route::get('/order/{id}', [CateringOrderController::class, 'view'])->name('order.view');
 });
 
 Route::get('/order', function () {
     $user = auth()->user();
     return view('order', ['user' => $user]);
 })->name('order');
+
+Route::get('/catering-payment', function () {
+    return view('catering-payment');
+});
+
+Route::post('/process-payment', [PaymentController::class, 'process'])->name('process-payment');

@@ -13,8 +13,8 @@ class CateringOrderProduct extends Model
         'quantity',
     ];
 
-    public function details()
+    public function details(): \Illuminate\Database\Eloquent\Relations\HasOne
     {
-        return $this->hasOne('App\Product', 'id', 'product_id');
+        return $this->hasOne(CateringProduct::class, 'id', 'product_id');
     }
 }
